@@ -1,6 +1,6 @@
 /**
  * CS2106 AY22/23 Semester 2 - Lab 2
- *
+ * Daniel Ling Zhi Yuan + Pang Bao Bin
  * This file contains function definitions. Your implementation should go in
  * this file.
  */
@@ -26,18 +26,14 @@ int numOfProc = 0;
  * Signal handler : ex4
  ******************************************************************************/
 
-static void signal_handler(int signo) {
+//static void signal_handler(int signo) {
 
         // Use the signo to identy ctrl-Z or ctrl-C and print “[PID] stopped or print “[PID] interrupted accordingly.
         // Update the status of the process in the PCB table 
 
-}
-
-
+//}
 
 static void proc_update_status() {
-
-
        /******* FILL IN THE CODE *******/
 
         // Call everytime you need to update status and exit code of a process in PCBTable
@@ -61,16 +57,13 @@ static void proc_update_status() {
             	}
         	}
     	}
-
         // May use WIFEXITED, WEXITSTATUS, WIFSIGNALED, WTERMSIG, WIFSTOPPED
-
-
 }
 
 
 /*******************************************************************************
  * Built-in Commands
- ******************************************************************************/
+
 static void update_child_status() {
 	// check and update pcbTable if background child ended
 	pid_t pid;
@@ -93,8 +86,7 @@ static void update_child_status() {
         }
     }
 }
-
-
+******************************************************************************/
 static void command_info(char option) {
 
         /******* FILL IN THE CODE *******/
@@ -161,6 +153,7 @@ static void command_info(char option) {
    	}
 }
 
+
 static void command_wait(pid_t pid) {
 
         /******* FILL IN THE CODE *******/
@@ -187,12 +180,8 @@ static void command_wait(pid_t pid) {
         	}
         }
     }
-    
-    
     // Else, continue accepting user commands.
-
 }
-
 
 static void command_terminate(pid_t pid) {
 
@@ -221,7 +210,7 @@ static void command_terminate(pid_t pid) {
 
 }
 
-static void command_fg(/* pass necessary parameters*/) {
+//static void command_fg(/* pass necessary parameters*/) {
 
         /******* FILL IN THE CODE *******/
         
@@ -230,7 +219,7 @@ static void command_fg(/* pass necessary parameters*/) {
         //Print “[PID] resumed”
         // Use kill() to send SIGCONT to {PID} to get it continue and wait for it
         // After the process terminate, update status and exit code (call proc_update_status())
-}
+//}
 
 
 /*******************************************************************************
@@ -240,8 +229,6 @@ static void command_fg(/* pass necessary parameters*/) {
 static void command_exec(char **cmd, size_t cmd_length) {
 
         /******* FILL IN THE CODE *******/
-
-
     // check if program exists and is executable : use access()
     if (access(cmd[0], X_OK) != 0) {
     	printf("%s not found\n", cmd[0]);
@@ -257,34 +244,89 @@ static void command_exec(char **cmd, size_t cmd_length) {
         	wait = false;
 			cmd[cmd_length - 1] = NULL;
 	}
+
     if ((pid = fork()) == 0) {
         // CHILD PROCESS
-
+		int lessIndex = -1;
+		int moreIndex = -1;
+		int twoMoreIndex = -1;
 
         // check file redirection operation is present : ex3
+		for(int i = 0; cmd[i]!= NULL; i++) {
+			if (strcmp(cmd[i], "<") == 0) {
+				lessIndex = i;
+			} else if (strcmp(cmd[i], ">") == 0) {
+				moreIndex = i;
+			} else if (strcmp(cmd[i], "2>") == 0) {
+				twoMoreIndex = i;
+			}
+		}
         
         // if < or > or 2> present: 
             // use fopen/open file to open the file for reading/writing with  permission O_RDONLY, O_WRONLY, O_CREAT, O_TRUNC, O_SYNC and 0644
             // use dup2 to redirect the stdin, stdout and stderr to the files
             // call execv() to execute the command in the child process
+		if (lessIndex != -1) {
+			FILE *filePtr = fopen(cmd[lessIndex + 1], "r");
+			if (filePtr != NULL) {
+				int fileDes = fileno(filePtr);
+				dup2(fileDes, 0);
+				fclose(filePtr);
+			} else {
+				fprintf(stderr, "%s does not exist\n", cmd[lessIndex + 1]);
+				exit(1);
+			}
+		}
+		if (moreIndex != -1) {
+			FILE *filePtr = fopen(cmd[moreIndex+1], "w");
+			if (filePtr != NULL) {
+				int fileDes = fileno(filePtr);
+				dup2(fileDes, 1);\
+				fclose(filePtr);
+			} else {
+				fprintf(stderr, "error occurred during file creation\n");
+				exit(1);
+			}
+		} 
+		if (twoMoreIndex != -1) {
+			FILE *filePtr = fopen(cmd[twoMoreIndex + 1], "w");
+			if (filePtr != NULL) {
+				int fileDes = fileno(filePtr);
+				dup2(fileDes, 2);
+				fclose(filePtr);
+			} else {
+				fprintf(stderr, "error occurred during file creation\n");
+				exit(1);
+			}
+		}
+
+		if (lessIndex == -1 && moreIndex == -1 && twoMoreIndex == -1) {
+			 // call execv() to execute the command in the child process
+			 execv(cmd[0], cmd);
+		} else {
+			int argEnd;
+			for (int i = 0; cmd[i] != NULL; i++) {
+            	if ((strcmp(cmd[i], "<") == 0) || ( strcmp(cmd[i], ">") == 0 ) || (strcmp(cmd[i], "2>") == 0)) {
+                	argEnd = i;
+                	break;
+            	}
+			}
+			char *newCmd[argEnd + 1];
+        	for (int i = 0; i < argEnd; i++) {
+            	newCmd[i] = cmd[i];
+        	}
+        	newCmd[argEnd] = NULL;
+        	execv(cmd[0], newCmd);
+		}
 
         // else : ex1, ex2 
-            // call execv() to execute the command in the child process
-        
         if (execv(cmd[0], cmd) == -1) {
         	fprintf(stderr, "execv() failed\n");
         	exit(EXIT_FAILURE);
     	}
-    	
-    	
-
         // Exit the child
         //exit(0);
-		
-
     } else {
-
-
         // PARENT PROCESS
         // register the process in process table
         int index = -1;
@@ -294,7 +336,6 @@ static void command_exec(char **cmd, size_t cmd_length) {
         		break;
         	}
         }
-        
         // Full pcbTable
         if (index == -1) {
         	fprintf(stderr, "Full pcbTable\n");
@@ -313,10 +354,11 @@ static void command_exec(char **cmd, size_t cmd_length) {
 		if (wait == false) {
 			//printf("We dont wait for child\n");
             fprintf(stderr, "Child [%d] in background\n", pid);
-            if (waitpid(pid, &status_code, WNOHANG) == -1) {
+            
+			if (waitpid(pid, &status_code, WNOHANG) == -1) {
         		fprintf(stderr, "Error waitpid, continue to accept\n");
         		exit(EXIT_FAILURE);
-        	}
+        	} 
         } else {
         	// else wait for the child process to exit 
         	//printf("We waiting for child\n");
@@ -329,11 +371,8 @@ static void command_exec(char **cmd, size_t cmd_length) {
             	pcbTable[index].exitCode = exit_status;
         }
         // Use waitpid() with WNOHANG when not blocking during wait and  waitpid() with WUNTRACED when parent needs to block due to wait 
-
-
     }
 }
-
 
 
 /*******************************************************************************
@@ -377,14 +416,7 @@ static void command(char **cmd, size_t cmd_length) {
     	// call command_exec() for all other commands           : ex1, ex2, ex3
     	command_exec(cmd, cmd_length);
     }
-    
-    
-    
     // if command is "fg" call command_fg()                 : ex4
-
-    
-
-
 }
 
 /*******************************************************************************
@@ -448,9 +480,6 @@ void my_process_command(size_t num_tokens, char **tokens) {
         	free(commands_arr[i]);
     	}
     	free(commands_arr);
-    	
-
-
 }
 
 void my_quit(void) {
