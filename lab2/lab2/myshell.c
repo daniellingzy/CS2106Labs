@@ -31,7 +31,9 @@ int numOfProc = 0;
 static void signal_handler(int signo) {
 		
 		pid_t pid = getpid();
-		
+		if (waitpid(pid, NULL, WNOHANG)== 0) {
+	
+		}
         // Use the signo to identy ctrl-Z or ctrl-C and print “[PID] stopped or print “[PID] interrupted accordingly.
         if (signo == SIGINT) {
         	// ctrl-C pressed
